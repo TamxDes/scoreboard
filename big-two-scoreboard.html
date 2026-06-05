@@ -93,13 +93,7 @@
   <!-- 輸入操作區：固定底部 -->
   <div class="bg-gray-800 border-t border-gray-700 shadow-lg">
     <div class="max-w-2xl mx-auto px-4 py-3">
-      <!-- 選擇赢家 -->
-      <div class="flex items-center gap-2 mb-3">
-        <label class="text-xs text-gray-400 shrink-0 w-10">赢家</label>
-        <div id="winnerSelect" class="flex gap-1.5 flex-1"></div>
-      </div>
-
-      <!-- 輸家牌數輸入 -->
+      <!-- 牌數輸入 -->
       <div class="flex items-center gap-2 mb-3">
         <label class="text-xs text-gray-400 shrink-0 w-10">牌數</label>
         <div id="cardsInput" class="flex gap-1.5 flex-1"></div>
@@ -157,7 +151,6 @@
       undoStack: [],
     };
 
-    let selectedWinner = null;
     let cardInputs = [null, null, null, null];
     let turnInRound = 1;
 
@@ -222,7 +215,6 @@
       renderHeader();
       renderPlayersPanel();
       renderHistory();
-      renderWinnerSelect();
       renderCardsInput();
       updateButtons();
       saveState();
@@ -249,7 +241,7 @@
               ${profit > 0 ? '+' : ''}${profit}
             </div>
             <div class="text-[10px] text-gray-500 mt-0.5">
-              盈利（張）
+              積分
             </div>
           </div>`;
       }).join('');
@@ -342,78 +334,45 @@
       panel.scrollTop = panel.scrollHeight;
     }
 
-    /** 選擇赢家 */
-    function renderWinnerSelect() {
-      const container = document.getElementById('winnerSelect');
-      container.innerHTML = state.players.map((name, i) => `
-        <button onclick="selectWinner(${i})"
-          class="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all
-            ${selectedWinner === i
-              ? 'bg-green-600 text-white ring-1 ring-green-400'
-              : 'bg-gray-700 text-gray-300 hover:bg-gray-600'}">
-          ${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}
-        </button>
-      `).join('');
-    }
-
-    /** 輸家牌數輸入 */
+    /** 牌數輸入 */
     function renderCardsInput() {
       const container = document.getElementById('cardsInput');
-      if (selectedWinner === null) {
-        container.innerHTML = '<div class="text-center text-gray-600 text-xs py-2 flex-1">請先選擇赢家</div>';
-        return;
-      }
-
-      container.innerHTML = state.players.map((name, i) => {
-        if (i === selectedWinner) return '';
-        return `
-          <div class="flex-1">
-            <label class="text-[10px] text-gray-500 block text-center mb-0.5">${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}</label>
-            <input type="number" min="1" max="100" step="1"
-              placeholder="牌數"
-              value="${cardInputs[i] !== null ? cardInputs[i] : ''}"
-              oninput="onCardInput(${i}, this.value)"
-              class="w-full px-1 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white text-center text-sm
-                placeholder-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
-          </div>`;
-      }).join('');
+      container.innerHTML = state.players.map((name, i) => `
+        <div class="flex-1">
+          <label class="text-[10px] text-gray-500 block text-center mb-0.5">${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}</label>
+          <input type="number" min="1" max="100" step="1"
+            placeholder="牌數"
+            value="${cardInputs[i] !== null ? cardInputs[i] : ''}"
+            oninput="onCardInput(${i}, this.value)"
+            class="w-full px-1 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white text-center text-sm
+              placeholder-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
+        </div>
+      `).join('');
     }
 
     /** 按鈕狀態 */
     function updateButtons() {
-      const loserInputs = cardInputs.filter((v, i) => i !== selectedWinner);
-      const hasValues = loserInputs.filter(v => v !== null && v > 0);
-      const allValid = hasValues.length === 3 && hasValues.every(v => v >= 1 && v <= 100);
+      const hasValues = cardInputs.filter(v => v !== null && v > 0);
+      const allValid = hasValues.length >= 1 && hasValues.every(v => v >= 1 && v <= 100);
 
       document.getElementById('confirmBtn').disabled = !allValid;
       document.getElementById('undoBtn').disabled = state.undoStack.length === 0;
 
       // 提示信息
       const hint = document.getElementById('inputHint');
-      if (selectedWinner === null) {
-        hint.textContent = '請先選擇赢家';
-        hint.className = 'text-xs text-gray-500';
-      } else if (hasValues.length < 3) {
-        hint.textContent = `還需輸入 ${3 - hasValues.length} 位牌數`;
+      if (hasValues.length === 0) {
+        hint.textContent = '請輸入至少1位玩家的牌數';
         hint.className = 'text-xs text-gray-500';
       } else if (!allValid) {
         hint.textContent = '牌數範圍：1-100';
         hint.className = 'text-xs text-yellow-500';
       } else {
-        hint.textContent = '✓ 可以確認';
+        hint.textContent = '✓ 可以確認（未輸入者為赢家）';
         hint.className = 'text-xs text-green-500';
       }
     }
 
     // ---------- 操作 ----------
-
-    function selectWinner(idx) {
-      selectedWinner = idx;
-      cardInputs = [null, null, null, null];
-      renderWinnerSelect();
-      renderCardsInput();
-      updateButtons();
-    }
 
     function onCardInput(idx, value) {
       if (value === '') {
@@ -428,20 +387,25 @@
     }
 
     function handleConfirmTurn() {
-      if (selectedWinner === null) return;
-
+      // 自動判斷赢家：沒有輸入數值的玩家
+      const winners = [];
       const losers = [];
       for (let i = 0; i < 4; i++) {
-        if (i === selectedWinner) continue;
-        const cards = cardInputs[i];
-        if (cards === null || cards < 1 || cards > 100) return;
-        losers.push({ idx: i, cards });
+        if (cardInputs[i] === null || cardInputs[i] === 0) {
+          winners.push(i);
+        } else {
+          losers.push({ idx: i, cards: cardInputs[i] });
+        }
       }
 
-      if (losers.length !== 3) return;
+      // 如果所有玩家都輸入了數值，則無法確認
+      if (winners.length === 0) {
+        alert('請至少保留一位玩家不輸入數值（該玩家為赢家）');
+        return;
+      }
 
-      // 計算本輪盈利
-      const turnProfits = calcTurnProfits(selectedWinner, losers);
+      // 計算本輪盈利（使用第一個赢家）
+      const turnProfits = calcTurnProfits(winners[0], losers);
 
       // 撤銷快照
       state.undoStack.push({
@@ -462,7 +426,7 @@
       state.history.push({
         round: state.gameRound,
         turnInRound: turnInRound,
-        winner: selectedWinner,
+        winner: winners[0],
         losers: losers,
         roundScores: [...state.roundScores],
         turnProfits: turnProfits,
@@ -476,7 +440,6 @@
       if (triggered.length > 0) {
         handleGameRoundEnd(triggered);
       } else {
-        selectedWinner = null;
         cardInputs = [null, null, null, null];
         renderAll();
       }
@@ -550,7 +513,6 @@
       state.roundProfits = [0, 0, 0, 0];
       state.undoStack = [];
       turnInRound = 1;
-      selectedWinner = null;
       cardInputs = [null, null, null, null];
       renderAll();
     }
@@ -565,7 +527,6 @@
       state.history = snapshot.history;
       state.gameRound = snapshot.gameRound;
       turnInRound = snapshot.turnInRound;
-      selectedWinner = null;
       cardInputs = [null, null, null, null];
       renderAll();
     }
@@ -586,7 +547,6 @@
       state.roundScores = [0, 0, 0, 0];
       state.roundProfits = [0, 0, 0, 0];
       turnInRound = 1;
-      selectedWinner = null;
       cardInputs = [null, null, null, null];
       renderAll();
     }
@@ -609,7 +569,6 @@
       state.history = [];
       state.gameRound = 1;
       turnInRound = 1;
-      selectedWinner = null;
       cardInputs = [null, null, null, null];
       renderAll();
     }
