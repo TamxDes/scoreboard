@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>鋤大Dee 計分器</title>
+  <title>出來聊天</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -48,7 +51,7 @@
     <div class="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
       <div class="flex items-center gap-2">
         <span class="text-2xl">🃏</span>
-        <h1 class="text-lg font-bold text-accent">鋤大Dee</h1>
+        <h1 class="text-lg font-bold text-accent">出來聊天</h1>
       </div>
       <div class="flex items-center gap-2 text-sm">
         <span class="text-gray-400">小局 <span id="gameRound" class="text-white font-bold">1</span></span>
@@ -239,9 +242,6 @@
             </div>
             <div class="text-2xl font-black ${isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : 'text-white'}">
               ${profit > 0 ? '+' : ''}${profit}
-            </div>
-            <div class="text-[10px] text-gray-500 mt-0.5">
-              積分
             </div>
           </div>`;
       }).join('');

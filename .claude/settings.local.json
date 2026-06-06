@@ -8,7 +8,29 @@
       "Bash(vercel whoami *)",
       "Bash(git init *)",
       "Bash(git add *)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "Bash(vercel --yes)",
+      "Bash(vercel --yes --name \"scoreboard-app\")",
+      "Bash(curl -I \"https://scoreboard-app-beta.vercel.app\")",
+      "Bash(netlify --version)",
+      "Bash(npm install *)",
+      "Bash(netlify status *)",
+      "Bash(netlify login *)",
+      "Bash(npx surge *)",
+      "Bash(gh --version)",
+      "Bash(winget install *)",
+      "Bash(where gh *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" --version)",
+      "Bash(/c/Program Files/GitHub CLI/gh.exe auth *)",
+      "Bash(curl *)",
+      "Bash(git remote *)",
+      "Bash(git push *)",
+      "Bash(tar -czf scoreboard-app.tar.gz *.html)",
+      "Bash(/c/Program Files/GitHub CLI/gh.exe repo *)",
+      "Bash(\"/c/Program Files/GitHub CLI/gh.exe\" auth token)",
+      "Bash(git rm *)",
+      "Bash(git fetch *)",
+      "Bash(git merge *)"
     ]
   }
 }
