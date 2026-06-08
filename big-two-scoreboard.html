@@ -134,7 +134,7 @@
 
     /* 流體字號 */
     .fluid-profit {
-      font-size: clamp(1.25rem, 4vw, 2rem);
+      font-size: clamp(1rem, 3.5vw, 1.5rem);
     }
 
     /* 底部輸入區：防止列被壓縮 */
@@ -187,9 +187,9 @@
   </header>
 
   <!-- 玩家卡片常驻栏 -->
-  <div class="relative z-10" style="background:rgba(10,10,26,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,240,255,0.08);">
-    <div class="max-w-2xl mx-auto px-3 sm:px-4 py-2.5">
-      <div class="grid grid-cols-4 gap-2 sm:gap-3" id="playersPanel"></div>
+  <div class="relative z-10" style="background:rgba(10,10,26,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:2px solid rgba(0,240,255,0.3);box-shadow:0 2px 12px rgba(0,240,255,0.06);">
+    <div class="max-w-2xl mx-auto px-3 sm:px-4 py-1.5 sm:py-2">
+      <div class="grid grid-cols-4 gap-1.5 sm:gap-2" id="playersPanel"></div>
     </div>
   </div>
 
@@ -367,14 +367,14 @@
         const icon = (name.includes('超') || name.includes('钊')) ? '🐶' : defaultIcons[i];
 
         return `
-          <div class="rounded-xl p-2.5 sm:p-3 text-center transition-all ${neon.glow}"
+          <div class="rounded-lg p-1.5 sm:p-2 text-center transition-all ${neon.glow}"
             style="background:${neon.bg};border:1px solid ${neon.border};">
-            <div class="text-lg sm:text-xl mb-0.5">${icon}</div>
-            <div class="text-[10px] sm:text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors truncate player-name"
+            <div class="text-base leading-none mb-0.5">${icon}</div>
+            <div class="text-[9px] sm:text-[10px] font-medium text-gray-400 cursor-pointer hover:text-white transition-colors truncate player-name"
               onclick="editPlayerName(${i})" title="點擊修改名稱">
               ${escapeHtml(name)} ✏️
             </div>
-            <div class="font-black mt-1 player-profit fluid-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
+            <div class="font-black mt-0.5 player-profit fluid-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
               ${profit > 0 ? '+' : ''}${profit}
             </div>
           </div>`;
