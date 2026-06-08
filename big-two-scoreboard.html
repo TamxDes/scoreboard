@@ -4,9 +4,10 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>出來聊天</title>
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <meta http-equiv="Pragma" content="no-cache">
-  <meta http-equiv="Expires" content="0">
+  <meta name="theme-color" content="#0a0a1a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.json">
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -109,6 +110,31 @@
     @media (max-width: 360px) {
       .player-profit { font-size: 1.5rem !important; }
       .player-name { font-size: 0.625rem !important; }
+    }
+
+    /* 動畫最佳實踐 */
+    button:active:not(:disabled) {
+      transform: scale(0.97);
+      transition: transform 100ms ease-out;
+    }
+    .animate-fadeIn { will-change: opacity, transform; }
+    .animate-slideUp { will-change: opacity, transform; }
+    .toast-in, .toast-out { will-change: opacity, transform; }
+
+    /* 觸控目標：最小 44px */
+    button, [onclick], input[type="number"] {
+      min-height: 44px;
+      min-width: 44px;
+    }
+
+    /* 禁用觸摸設備的 hover 效果 */
+    @media (hover: none) {
+      .card:hover, button:hover { transform: none !important; box-shadow: none !important; }
+    }
+
+    /* 流體字號 */
+    .fluid-profit {
+      font-size: clamp(1.25rem, 4vw, 2rem);
     }
   </style>
 </head>
@@ -339,7 +365,7 @@
               onclick="editPlayerName(${i})" title="點擊修改名稱">
               ${escapeHtml(name)} ✏️
             </div>
-            <div class="text-xl sm:text-2xl font-black mt-1 player-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
+            <div class="font-black mt-1 player-profit fluid-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
               ${profit > 0 ? '+' : ''}${profit}
             </div>
           </div>`;
@@ -810,6 +836,13 @@
       const div = document.createElement('div');
       div.textContent = str;
       return div.innerHTML;
+    }
+
+    // ---------- PWA Service Worker ----------
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
     }
 
     // ---------- 啟動 ----------

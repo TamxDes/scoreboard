@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>锄大Dee计分器</title>
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.json">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900 min-h-screen">
+    <div class="flex flex-col h-screen">
+        <div class="bg-black/20 backdrop-blur-lg py-4 px-6 border-b border-white/10">
+            <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-4">
+                <h1 class="text-3xl font-bold text-white">锄大Dee计分器</h1>
+                <div class="flex flex-wrap gap-4 items-center">
+                    <span class="text-white text-lg">第 <span id="roundNumber" class="font-bold text-yellow-400">1</span> 局 · 第 <span id="turnNumber" class="font-bold text-yellow-400">1</span> 轮</span>
+                    <button id="resetRoundBtn" class="bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 rounded-lg transition-colors">重置本局</button>
+                    <button id="resetGameBtn" class="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded-lg transition-colors">重置游戏</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex-1 flex overflow-hidden">
+            <div class="w-1/4 bg-white/5 backdrop-blur-sm border-r border-white/10 p-4 overflow-y-auto">
+                <h2 class="text-white font-bold text-lg mb-4 text-center">玩家信息</h2>
+                <div id="playersPanel" class="space-y-3"></div>
+            </div>
+
+            <div class="w-2/4 bg-white/5 backdrop-blur-sm border-r border-white/10 p-4 overflow-y-auto">
+                <h2 class="text-white font-bold text-lg mb-4 text-center">得分历史</h2>
+                <div id="historyPanel" class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead class="bg-white/10 sticky top-0">
+                            <tr id="historyHeader" class="text-white"></tr>
+                        </thead>
+                        <tbody id="historyBody" class="text-white"></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="w-1/4 bg-white/5 backdrop-blur-sm p-4 overflow-y-auto">
+                <h2 class="text-white font-bold text-lg mb-4 text-center">记录本轮</h2>
+                
+                <div class="mb-4">
+                    <label class="text-white/80 text-sm block mb-2">选择赢家</label>
+                    <div id="winnerSelect" class="space-y-2"></div>
+                </div>
+
+                <div class="mb-4">
+                    <label class="text-white/80 text-sm block mb-2">输入输家剩余牌数</label>
+                    <div id="cardsInput" class="space-y-3"></div>
+                </div>
+
+                <div class="space-y-3">
+                    <button id="confirmBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed">确认记录</button>
+                    <button id="undoBtn" class="w-full bg-gray-500 hover:bg-gray-600 text-white font-bold py-3 px-4 rounded-xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed" disabled>撤销上一轮</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="settlementModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden items-center justify-center z-50">
+        <div class="bg-white rounded-2xl p-8 max-w-2xl w-full mx-4 shadow-2xl">
+            <h2 class="text-3xl font-bold text-center text-gray-800 mb-6">本局结算</h2>
+            <div id="settlementDetails" class="mb-6"></div>
+            <button id="nextRoundBtn" class="w-full bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700 text-white font-bold py-4 px-8 rounded-xl text-xl transition-all">开始下一局</button>
+        </div>
+    </div>
+
+    <script>
+        const players = [
+            { id: 1, name: '玩家1', total: 0, carryover: 0, history: [] },
+            { id: 2, name: '玩家2', total: 0, carryover: 0, history: [] },
+            { id: 3, name: '玩家3', total: 0, carryover: 0, history: [] },
+            { id: 4, name: '玩家4', total: 0, carryover: 0, history: [] }
+        ];
+
+        let roundNumber = 1;
+        let turnNumber = 1;
+        let history = [];
+        let selectedWinner = null;
+
+        const playerColors = [
+            'from-rose-500 to-pink-600',
+            'from-amber-500 to-orange-600',
+            'from-emerald-500 to-teal-600',
+            'from-cyan-500 to-blue-600'
+        ];
+
+        function init() {
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            updateButtons();
+            bindEvents();
+        }
+
+        function renderPlayersPanel() {
+            const container = document.getElementById('playersPanel');
+            container.innerHTML = players.map((p, idx) => `
+                <div class="bg-gradient-to-br ${playerColors[idx]} rounded-xl p-4 shadow-lg border border-white/20">
+                    <div class="text-center mb-2">
+                        <div class="text-5xl mb-1">👤</div>
+                        <input type="text" value="${p.name}" data-player-id="${p.id}" 
+                               class="player-name w-full bg-white/20 border-0 text-white text-center text-lg font-bold rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50" />
+                    </div>
+                    <div class="text-center">
+                        <div class="text-5xl font-black text-white drop-shadow-md ${p.total >= 100 ? 'animate-pulse' : ''}">${p.total}</div>
+                        <div class="text-white/80 text-xs mt-1">总积分</div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.querySelectorAll('.player-name').forEach(input => {
+                input.addEventListener('change', (e) => {
+                    const id = parseInt(e.target.dataset.playerId);
+                    const player = players.find(p => p.id === id);
+                    if (player) player.name = e.target.value;
+                    renderWinnerSelect();
+                    renderHistory();
+                });
+            });
+        }
+
+        function renderHistory() {
+            const header = document.getElementById('historyHeader');
+            const body = document.getElementById('historyBody');
+            
+            header.innerHTML = `<th class="px-3 py-2 text-left bg-white/5">轮次</th>` + 
+                players.map(p => `<th class="px-3 py-2 text-center bg-white/5">👤 ${p.name}</th>`).join('');
+            
+            const maxHistory = Math.max(...players.map(p => p.history.length));
+            let rows = '';
+            for (let i = 0; i < maxHistory; i++) {
+                rows += `<tr class="border-b border-white/5">
+                    <td class="px-3 py-2 bg-white/5 font-semibold">第${i + 1}轮</td>
+                    ${players.map(p => {
+                        const val = p.history[i] ?? '-';
+                        return `<td class="px-3 py-2 text-center ${val === 0 ? 'text-green-400 font-bold' : ''}">${val}</td>`;
+                    }).join('')}
+                </tr>`;
+            }
+            body.innerHTML = rows || '<tr><td colspan="5" class="px-3 py-4 text-center text-white/50">暂无记录</td></tr>';
+        }
+
+        function renderWinnerSelect() {
+            const container = document.getElementById('winnerSelect');
+            container.innerHTML = players.map(p => `
+                <button class="winner-btn w-full px-4 py-3 rounded-lg font-semibold transition-all ${selectedWinner === p.id ? 'bg-green-500 text-white ring-2 ring-green-300' : 'bg-white/20 text-white hover:bg-white/30'}" data-id="${p.id}">
+                    👤 ${p.name}
+                </button>
+            `).join('');
+
+            container.querySelectorAll('.winner-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    selectedWinner = parseInt(btn.dataset.id);
+                    renderWinnerSelect();
+                    renderCardsInput();
+                    updateButtons();
+                });
+            });
+        }
+
+        function renderCardsInput() {
+            const container = document.getElementById('cardsInput');
+            const losers = players.filter(p => p.id !== selectedWinner);
+            container.innerHTML = losers.map(p => `
+                <div>
+                    <label class="text-white/80 text-sm block mb-1">👤 ${p.name} 剩余牌数</label>
+                    <input type="number" min="1" max="13" value="" data-player-id="${p.id}" 
+                           class="cards-input w-full bg-white/20 border-0 text-white text-center text-2xl font-bold py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50" placeholder="0" />
+                </div>
+            `).join('') || '<div class="text-white/50 text-center">请先选择赢家</div>';
+
+            container.querySelectorAll('.cards-input').forEach(input => {
+                input.addEventListener('input', updateButtons);
+            });
+        }
+
+        function updateButtons() {
+            const confirmBtn = document.getElementById('confirmBtn');
+            const undoBtn = document.getElementById('undoBtn');
+            const inputs = document.querySelectorAll('.cards-input');
+            let allValid = selectedWinner !== null;
+            inputs.forEach(input => {
+                const val = parseInt(input.value);
+                if (isNaN(val) || val < 1 || val > 13) allValid = false;
+            });
+            confirmBtn.disabled = !allValid;
+            undoBtn.disabled = history.length === 0;
+            document.getElementById('roundNumber').textContent = roundNumber;
+            document.getElementById('turnNumber').textContent = turnNumber;
+        }
+
+        function bindEvents() {
+            document.getElementById('confirmBtn').addEventListener('click', recordTurn);
+            document.getElementById('undoBtn').addEventListener('click', undoTurn);
+            document.getElementById('resetRoundBtn').addEventListener('click', resetRound);
+            document.getElementById('resetGameBtn').addEventListener('click', resetGame);
+            document.getElementById('nextRoundBtn').addEventListener('click', startNextRound);
+        }
+
+        function recordTurn() {
+            const state = players.map(p => ({ id: p.id, total: p.total, carryover: p.carryover, history: [...p.history] }));
+            history.push({ state, turnNumber, selectedWinner });
+
+            const inputs = document.querySelectorAll('.cards-input');
+            inputs.forEach(input => {
+                const id = parseInt(input.dataset.playerId);
+                const cards = parseInt(input.value);
+                const player = players.find(p => p.id === id);
+                if (player) {
+                    player.total += cards;
+                    player.history.push(cards);
+                }
+            });
+
+            const winner = players.find(p => p.id === selectedWinner);
+            if (winner) winner.history.push(0);
+
+            turnNumber++;
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            selectedWinner = null;
+            updateButtons();
+
+            checkSettlement();
+        }
+
+        function undoTurn() {
+            if (!history.length) return;
+            const last = history.pop();
+            last.state.forEach(saved => {
+                const p = players.find(pl => pl.id === saved.id);
+                if (p) {
+                    p.total = saved.total;
+                    p.carryover = saved.carryover;
+                    p.history = saved.history;
+                }
+            });
+            turnNumber = last.turnNumber;
+            selectedWinner = last.selectedWinner;
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            updateButtons();
+        }
+
+        function resetRound() {
+            if (!confirm('确定重置本局吗？')) return;
+            players.forEach(p => {
+                p.total = p.carryover;
+                p.history = [];
+            });
+            turnNumber = 1;
+            history = [];
+            selectedWinner = null;
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            updateButtons();
+        }
+
+        function resetGame() {
+            if (!confirm('确定重置整个游戏吗？')) return;
+            players.forEach(p => {
+                p.total = 0;
+                p.carryover = 0;
+                p.history = [];
+            });
+            roundNumber = 1;
+            turnNumber = 1;
+            history = [];
+            selectedWinner = null;
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            updateButtons();
+        }
+
+        function checkSettlement() {
+            if (players.some(p => p.total >= 100)) showSettlement();
+        }
+
+        function showSettlement() {
+            const details = players.map((p, idx) => {
+                const settlement = Math.floor(p.total / 10) * 10;
+                const carryover = p.total % 10;
+                return { ...p, settlement, carryover };
+            });
+
+            document.getElementById('settlementDetails').innerHTML = `
+                <div class="space-y-3">
+                    ${details.map((d, i) => `
+                        <div class="flex items-center justify-between p-4 bg-gradient-to-r ${playerColors[i]} rounded-xl text-white">
+                            <div class="flex items-center gap-2 font-bold text-xl">👤 ${d.name}</div>
+                            <div class="text-right">
+                                <div class="text-2xl font-black">${d.settlement} <span class="text-lg font-normal opacity-80">分</span></div>
+                                <div class="text-sm opacity-80">下局继承 ${d.carryover} 分</div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+
+            const modal = document.getElementById('settlementModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        }
+
+        function startNextRound() {
+            players.forEach(p => {
+                const carryover = p.total % 10;
+                p.total = carryover;
+                p.carryover = carryover;
+                p.history = [];
+            });
+            roundNumber++;
+            turnNumber = 1;
+            history = [];
+            selectedWinner = null;
+            const modal = document.getElementById('settlementModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            renderPlayersPanel();
+            renderHistory();
+            renderWinnerSelect();
+            renderCardsInput();
+            updateButtons();
+        }
+
+        init();
+
+        // PWA Service Worker
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js').catch(() => {});
+            });
+        }
+    </script>
+</body>
+</html>

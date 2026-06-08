@@ -1,0 +1,26 @@
+{
+  "name": "鋤大Dee 計分器",
+  "short_name": "鋤大Dee",
+  "description": "支持 4 人遊戲，實時計算盈利與排名，自動結算記分",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a0a1a",
+  "theme_color": "#0a0a1a",
+  "lang": "zh-Hant",
+  "categories": ["games", "utilities"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a1a' width='100' height='100' rx='20'/><text x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-size='60'>🃏</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%230a0a1a' width='100' height='100' rx='20'/><text x='50' y='55' text-anchor='middle' dominant-baseline='middle' font-size='60'>🃏</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
