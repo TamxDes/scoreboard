@@ -43,9 +43,36 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 5px currentColor; } 50% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; } }
     @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+    @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+    @keyframes toastOut { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } }
 
     .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
     .animate-slideUp { animation: slideUp 0.3s ease-out; }
+    .toast-in { animation: toastIn 0.3s ease-out forwards; }
+    .toast-out { animation: toastOut 0.4s ease-in forwards; }
+
+    /* 彩纸特效 */
+    @keyframes confettiFall {
+      0% { transform: translateY(-10px) rotate(0deg); opacity: 1; }
+      100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+    }
+    .confetti {
+      position: fixed;
+      top: 0;
+      width: 10px;
+      height: 10px;
+      z-index: 100;
+      pointer-events: none;
+      animation: confettiFall linear forwards;
+    }
+
+    /* 盈利突破弹窗特效 */
+    @keyframes profitPulse {
+      0% { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+      50% { box-shadow: 0 0 40px rgba(0,255,136,0.6), 0 0 80px rgba(0,240,255,0.3); }
+      100% { box-shadow: 0 0 20px rgba(0,255,136,0.4); }
+    }
+    .profit-toast-glow { animation: profitPulse 1s ease-in-out 3; }
 
     /* 霓虹发光效果 */
     .neon-glow-cyan { box-shadow: 0 0 10px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.3); }
@@ -124,12 +151,16 @@
     </div>
   </header>
 
-  <!-- 主内容区（信息流：玩家 + 历史一起滚动） -->
+  <!-- 玩家卡片常驻栏 -->
+  <div class="relative z-10" style="background:rgba(10,10,26,0.85);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border-bottom:1px solid rgba(0,240,255,0.08);">
+    <div class="max-w-2xl mx-auto px-3 sm:px-4 py-2.5">
+      <div class="grid grid-cols-4 gap-2 sm:gap-3" id="playersPanel"></div>
+    </div>
+  </div>
+
+  <!-- 主内容区：历史记录滚动 -->
   <div class="flex-1 overflow-hidden relative z-10">
     <div class="h-full overflow-y-auto px-3 sm:px-4 py-3" id="mainPanel">
-
-      <!-- 玩家卡片 4×1 -->
-      <div class="grid grid-cols-4 gap-2 sm:gap-3 mb-4" id="playersPanel"></div>
 
       <!-- 历史记录标题 -->
       <div id="historySection" class="mb-2">
@@ -142,12 +173,8 @@
 
       <!-- 历史记录表格 -->
       <div id="historyWrap" class="rounded-xl overflow-hidden mb-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
-        <table class="w-full text-sm" id="historyTable">
-          <thead>
-            <tr id="historyHeader" class="text-xs" style="color:rgba(0,240,255,0.6);"></tr>
-          </thead>
-          <tbody id="historyBody" class="text-gray-300"></tbody>
-        </table>
+        <div id="historyHeader" class="flex gap-2 px-3 sm:px-4 py-2 text-xs" style="color:rgba(0,240,255,0.6);"></div>
+        <div id="historyBody" class="text-gray-300 px-3 sm:px-4"></div>
       </div>
 
       <div id="historyEmpty" class="text-center py-10">
@@ -187,8 +214,8 @@
     <div class="absolute inset-0" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);" onclick="closeSettlementModal()"></div>
     <div class="relative rounded-2xl p-5 sm:p-6 w-full max-w-lg animate-fadeIn modal-body"
       style="background:rgba(15,15,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(0,240,255,0.2);box-shadow:0 0 40px rgba(0,240,255,0.1);">
-      <h2 class="text-xl font-bold mb-1 neon-text-cyan">🎉 小局結束！</h2>
-      <p class="text-sm text-gray-400 mb-4" id="settlementTrigger"></p>
+      <h2 class="text-xl font-bold mb-1 neon-text-cyan">🎉 沖線！</h2>
+      <p class="text-sm mb-4" id="settlementTrigger" style="color:rgba(0,240,255,0.7);"></p>
 
       <div class="mb-4">
         <h3 class="text-xs font-bold mb-2 uppercase tracking-wider" style="color:rgba(255,45,149,0.6);">結算匯總</h3>
@@ -198,8 +225,17 @@
       <button onclick="startNewGameRound()"
         class="w-full py-3 rounded-xl font-bold transition-all"
         style="background:linear-gradient(135deg,#00f0ff,#a855f7);color:#fff;box-shadow:0 0 20px rgba(0,240,255,0.3);">
-        繼續新小局
+        開始新小局 ♦️3
       </button>
+    </div>
+  </div>
+
+  <!-- 彩蛋弹窗 -->
+  <div id="easterToast" class="fixed z-50 pointer-events-none" style="top:50%;left:50%;transform:translate(-50%,-50%);display:none;">
+    <div class="px-6 py-4 rounded-2xl text-center max-w-xs"
+      style="background:rgba(10,10,26,0.95);backdrop-filter:blur(20px);border:2px solid rgba(255,45,149,0.5);box-shadow:0 0 30px rgba(255,45,149,0.3),0 0 60px rgba(168,85,247,0.15);">
+      <div id="easterEmoji" class="text-3xl mb-2">🐶</div>
+      <div id="easterText" class="text-sm font-bold neon-text-pink"></div>
     </div>
   </div>
 
@@ -286,18 +322,19 @@
     function renderPlayersPanel() {
       const container = document.getElementById('playersPanel');
       // 不同颜色的人形图标
-      const personIcons = ['🧑‍🦱', '👩', '👨', '🧑'];
+      const defaultIcons = ['👤', '👤', '👤', '👤'];
 
       container.innerHTML = state.players.map((name, i) => {
         const profit = state.profits[i] + state.roundProfits[i];
         const isPositive = profit > 0;
         const isNegative = profit < 0;
         const neon = NEON_CSS[NEON_COLORS[i]];
+        const icon = (name.includes('超') || name.includes('钊')) ? '🐶' : defaultIcons[i];
 
         return `
           <div class="rounded-xl p-2.5 sm:p-3 text-center transition-all ${neon.glow}"
             style="background:${neon.bg};border:1px solid ${neon.border};">
-            <div class="text-lg sm:text-xl mb-0.5">${personIcons[i]}</div>
+            <div class="text-lg sm:text-xl mb-0.5">${icon}</div>
             <div class="text-[10px] sm:text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors truncate player-name"
               onclick="editPlayerName(${i})" title="點擊修改名稱">
               ${escapeHtml(name)} ✏️
@@ -329,8 +366,9 @@
       wrap.style.display = 'block';
       section.style.display = 'block';
 
-      header.innerHTML = `<th class="py-2 px-2 sm:px-3 text-left font-medium">R</th>` +
-        state.players.map(n => `<th class="py-2 px-2 sm:px-3 text-center font-medium">${escapeHtml(n.length > 4 ? n.substring(0, 4) : n)}</th>`).join('');
+      // 表头：与输入区对齐（w-8/w-10 + 4个flex-1）
+      header.innerHTML = `<div class="w-8 sm:w-10 shrink-0 text-left font-medium">R</div>` +
+        state.players.map(n => `<div class="flex-1 text-center font-medium">${escapeHtml(n.length > 4 ? n.substring(0, 4) : n)}</div>`).join('');
 
       let html = '';
       let currentRound = 0;
@@ -341,49 +379,49 @@
             const roundRecords = state.history.filter(r => r.round === currentRound);
             const lastRecord = roundRecords[roundRecords.length - 1];
             if (lastRecord && lastRecord.roundScores) {
-              html += `<tr style="border-top:2px solid rgba(0,240,255,0.15);">
-                <td class="py-2 px-2 sm:px-3 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</td>`;
+              html += `<div class="flex gap-2 items-center py-2" style="border-top:2px solid rgba(0,240,255,0.15);">
+                <div class="w-8 sm:w-10 shrink-0 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</div>`;
               for (let pi = 0; pi < 4; pi++) {
                 const isDanger = lastRecord.roundScores[pi] >= 100;
-                html += `<td class="py-2 px-2 sm:px-3 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
+                html += `<div class="flex-1 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</div>`;
               }
-              html += '</tr>';
+              html += '</div>';
             }
-            html += `<tr><td colspan="5" class="py-2">
+            html += `<div class="py-2">
               <div class="flex items-center gap-2">
                 <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(255,45,149,0.3),transparent);"></div>
                 <span class="text-xs font-bold px-2 neon-text-pink">小局 ${record.round}</span>
                 <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(255,45,149,0.3),transparent);"></div>
               </div>
-            </td></tr>`;
+            </div>`;
           }
           currentRound = record.round;
         }
 
-        html += `<tr style="border-top:1px solid rgba(255,255,255,0.04);" class="hover:bg-white/[0.02] transition-colors">
-          <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-xs font-medium" style="color:rgba(0,240,255,0.4);">${record.turnInRound}</td>`;
+        html += `<div class="flex gap-2 items-center py-1.5 sm:py-2 hover:bg-white/[0.02] transition-colors" style="border-top:1px solid rgba(255,255,255,0.04);">
+          <div class="w-8 sm:w-10 shrink-0 text-xs font-medium" style="color:rgba(0,240,255,0.4);">${record.turnInRound}</div>`;
         for (let pi = 0; pi < 4; pi++) {
           if (pi === record.winner) {
-            html += '<td class="py-1.5 sm:py-2 px-2 sm:px-3 text-center font-medium neon-text-green">0 ✓</td>';
+            html += '<div class="flex-1 text-center font-medium neon-text-green">0 ✓</div>';
           } else {
             const loserInfo = record.losers.find(l => l.idx === pi);
-            html += `<td class="py-1.5 sm:py-2 px-2 sm:px-3 text-center text-gray-300">${loserInfo ? loserInfo.cards : '-'}</td>`;
+            html += `<div class="flex-1 text-center text-gray-300">${loserInfo ? loserInfo.cards : '-'}</div>`;
           }
         }
-        html += '</tr>';
+        html += '</div>';
       });
 
       // 最后一个小局合计
       if (currentRound > 0) {
         const lastRecord = state.history[state.history.length - 1];
         if (lastRecord && lastRecord.roundScores) {
-          html += `<tr style="border-top:2px solid rgba(0,240,255,0.15);">
-            <td class="py-2 px-2 sm:px-3 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</td>`;
+          html += `<div class="flex gap-2 items-center py-2" style="border-top:2px solid rgba(0,240,255,0.15);">
+            <div class="w-8 sm:w-10 shrink-0 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</div>`;
           for (let pi = 0; pi < 4; pi++) {
             const isDanger = lastRecord.roundScores[pi] >= 100;
-            html += `<td class="py-2 px-2 sm:px-3 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
+            html += `<div class="flex-1 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</div>`;
           }
-          html += '</tr>';
+          html += '</div>';
         }
       }
 
@@ -433,6 +471,144 @@
       }
     }
 
+    // ---------- 彩蛋：连续赢牌检测 ----------
+
+    const EASTER_MSGS = {
+      3: '够咯够咯',
+      4: '当个人吧',
+      5: '懒得说你了',
+      6: '你自己一个玩晒啦',
+    };
+
+    let easterTimer = null;
+
+    // 盈利突破阈值
+    const PROFIT_MILESTONES = [
+      { threshold: 100, emoji: '💰', msg: '哇！*哥，犀利啊', color: '#00ff88' },
+      { threshold: 200, emoji: '🤑', msg: '哇！*哥，赚大钱啊', color: '#e8b931' },
+      { threshold: 300, emoji: '🚀', msg: '芜湖！*哥，起飞了', color: '#ff2d95' },
+    ];
+
+    function checkProfitMilestone(oldProfits, newProfits) {
+      for (let pi = 0; pi < 4; pi++) {
+        for (const milestone of PROFIT_MILESTONES) {
+          if (oldProfits[pi] < milestone.threshold && newProfits[pi] >= milestone.threshold) {
+            const name = state.players[pi];
+            const shortName = name.length > 1 ? name.substring(0, 1) : name;
+            const msg = milestone.msg.replace('*', shortName);
+            showProfitToast(msg, milestone.emoji, milestone.color);
+            spawnConfetti();
+            return; // 每轮只弹一个
+          }
+        }
+      }
+    }
+
+    function showProfitToast(text, emoji, color) {
+      const toast = document.getElementById('easterToast');
+      const textEl = document.getElementById('easterText');
+      const emojiEl = document.getElementById('easterEmoji');
+      const inner = toast.querySelector('div');
+
+      textEl.textContent = text;
+      emojiEl.textContent = emoji;
+      textEl.style.color = color;
+      textEl.style.textShadow = `0 0 12px ${color}`;
+
+      // 特殊发光边框
+      inner.style.borderColor = color;
+      inner.style.boxShadow = `0 0 30px ${color}60, 0 0 60px ${color}20`;
+      inner.classList.add('profit-toast-glow');
+
+      if (easterTimer) { clearTimeout(easterTimer); easterTimer = null; }
+
+      toast.style.display = 'block';
+      inner.classList.remove('toast-out');
+      inner.classList.add('toast-in');
+
+      easterTimer = setTimeout(() => {
+        inner.classList.remove('toast-in', 'profit-toast-glow');
+        inner.classList.add('toast-out');
+        setTimeout(() => {
+          toast.style.display = 'none';
+          inner.classList.remove('toast-out');
+          // 重置样式
+          inner.style.borderColor = '';
+          inner.style.boxShadow = '';
+          textEl.style.color = '';
+          textEl.style.textShadow = '';
+        }, 400);
+      }, 5000);
+    }
+
+    // 彩纸特效
+    function spawnConfetti() {
+      const colors = ['#ff2d95', '#00f0ff', '#a855f7', '#00ff88', '#e8b931', '#ff3366'];
+      const container = document.body;
+      for (let i = 0; i < 40; i++) {
+        const el = document.createElement('div');
+        el.className = 'confetti';
+        el.style.left = Math.random() * 100 + 'vw';
+        el.style.background = colors[Math.floor(Math.random() * colors.length)];
+        el.style.width = (Math.random() * 8 + 6) + 'px';
+        el.style.height = (Math.random() * 8 + 6) + 'px';
+        el.style.borderRadius = Math.random() > 0.5 ? '50%' : '2px';
+        el.style.animationDuration = (Math.random() * 2 + 2) + 's';
+        el.style.animationDelay = (Math.random() * 1) + 's';
+        container.appendChild(el);
+        setTimeout(() => el.remove(), 5000);
+      }
+    }
+
+    function checkEasterEgg() {
+      const roundHistory = state.history.filter(r => r.round === state.gameRound);
+      if (roundHistory.length < 3) return;
+
+      for (let pi = 0; pi < 4; pi++) {
+        let streak = 0;
+        for (let j = roundHistory.length - 1; j >= 0; j--) {
+          if (roundHistory[j].winner === pi) { streak++; }
+          else { break; }
+        }
+        if (streak >= 3 && streak <= 6) {
+          const name = state.players[pi];
+          const shortName = name.length > 1 ? name.substring(0, 1) : name;
+          showEasterToast(`${shortName}哥，${EASTER_MSGS[streak]}`);
+          break;
+        }
+      }
+    }
+
+    function showEasterToast(text) {
+      const toast = document.getElementById('easterToast');
+      const textEl = document.getElementById('easterText');
+      const emojiEl = document.getElementById('easterEmoji');
+      const inner = toast.querySelector('div');
+
+      textEl.textContent = text;
+      emojiEl.textContent = '🐶';
+      textEl.style.color = '';
+      textEl.style.textShadow = '';
+      inner.style.borderColor = '';
+      inner.style.boxShadow = '';
+      inner.classList.remove('profit-toast-glow');
+
+      if (easterTimer) { clearTimeout(easterTimer); easterTimer = null; }
+
+      toast.style.display = 'block';
+      inner.classList.remove('toast-out');
+      inner.classList.add('toast-in');
+
+      easterTimer = setTimeout(() => {
+        inner.classList.remove('toast-in');
+        inner.classList.add('toast-out');
+        setTimeout(() => {
+          toast.style.display = 'none';
+          inner.classList.remove('toast-out');
+        }, 400);
+      }, 5000);
+    }
+
     // ---------- 操作 ----------
     function onCardInput(idx, value) {
       if (value === '') { cardInputs[idx] = null; }
@@ -457,6 +633,8 @@
         return;
       }
       const turnProfits = calcTurnProfits(winners[0], losers);
+      // 记录更新前的总盈利，用于检测突破
+      const oldTotalProfits = state.profits.map((p, i) => p + state.roundProfits[i]);
       state.undoStack.push({
         totalScores: [...state.totalScores], profits: [...state.profits],
         roundScores: [...state.roundScores], roundProfits: [...state.roundProfits],
@@ -473,10 +651,29 @@
       turnInRound++;
       const triggered = state.roundScores.map((s, i) => s >= 100 ? i : -1).filter(i => i !== -1);
       if (triggered.length > 0) { handleGameRoundEnd(triggered); }
-      else { cardInputs = [null, null, null, null]; renderAll(); }
+      else {
+        // 检测盈利突破
+        const newTotalProfits = state.profits.map((p, i) => p + state.roundProfits[i]);
+        checkProfitMilestone(oldTotalProfits, newTotalProfits);
+        cardInputs = [null, null, null, null];
+        renderAll();
+        checkEasterEgg();
+      }
     }
 
     function handleGameRoundEnd(triggerIndices) {
+      // 结算前保存快照，以便撤回
+      state.undoStack.push({
+        totalScores: [...state.totalScores],
+        profits: [...state.profits],
+        roundScores: [...state.roundScores],
+        roundProfits: [...state.roundProfits],
+        history: JSON.parse(JSON.stringify(state.history)),
+        gameRound: state.gameRound,
+        turnInRound: turnInRound,
+        isSettlement: true,  // 标记为结算快照
+      });
+
       const settledScores = state.roundScores.map(s => Math.floor(s / 10) * 10);
       const carryOver = state.roundScores.map(s => s % 10);
       state.totalScores = state.totalScores.map((t, i) => t + settledScores[i]);
@@ -486,10 +683,18 @@
     }
 
     function showSettlementModal(triggerIndices, settledScores, carryOver) {
-      const triggerNames = triggerIndices.map(i => state.players[i]).join('、');
-      const triggerScores = triggerIndices.map(i => state.roundScores[i]).join('、');
+      // 冲线玩家
+      const triggerName = triggerIndices.map(i => state.players[i]).join('、');
       document.getElementById('settlementTrigger').textContent =
-        `${triggerNames} 達到 ${triggerScores} 分，小局結束！`;
+        `${triggerName} 玩家沖線！下一轮由 ♦️3 開始吧！`;
+
+      // 计算本小局每个玩家的总牌数
+      const roundCards = [0, 0, 0, 0];
+      state.history.forEach(r => {
+        if (r.round === state.gameRound) {
+          r.losers.forEach(l => { roundCards[l.idx] += l.cards; });
+        }
+      });
 
       const summary = document.getElementById('settlementSummary');
       summary.innerHTML = state.players.map((name, i) => {
@@ -498,6 +703,7 @@
         const carry = carryOver[i];
         const roundProfit = state.roundProfits[i];
         const totalProfit = state.profits[i];
+        const totalCards = roundCards[i];
         const neon = NEON_CSS[NEON_COLORS[i]];
         return `
           <div class="rounded-xl px-3 py-2.5" style="background:${neon.bg};border:1px solid ${neon.border};">
@@ -508,8 +714,8 @@
               </span>
             </div>
             <div class="flex items-center gap-1 text-[11px] text-gray-400 flex-wrap">
-              <span>本局 <b class="text-gray-200">${roundTotal}</b></span>
-              <span class="text-gray-600">→</span>
+              <span>總牌數 <b class="text-gray-200">${totalCards}</b></span>
+              <span class="text-gray-600">·</span>
               <span>結算 <b style="color:#e8b931;">+${settled}</b></span>
               <span class="text-gray-600">+</span>
               <span>繼承 <b class="text-gray-200">${carry}</b></span>
@@ -533,7 +739,6 @@
       state.gameRound += 1;
       state.roundScores = carryOver;
       state.roundProfits = [0, 0, 0, 0];
-      state.undoStack = [];
       turnInRound = 1;
       cardInputs = [null, null, null, null];
       renderAll();
@@ -542,6 +747,10 @@
     function handleUndo() {
       if (state.undoStack.length === 0) return;
       const snapshot = state.undoStack.pop();
+
+      // 如果正在显示结算弹窗，先关闭
+      closeSettlementModal();
+
       state.totalScores = snapshot.totalScores;
       state.profits = snapshot.profits;
       state.roundScores = snapshot.roundScores;
