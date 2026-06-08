@@ -369,12 +369,10 @@
         return `
           <div class="rounded-lg px-1.5 sm:px-2 py-2 flex flex-col items-center justify-center transition-all ${neon.glow}"
             style="background:${neon.bg};border:1px solid ${neon.border};">
-            <div class="flex items-center gap-1 mb-1">
-              <span class="text-lg leading-none">${icon}</span>
-              <span class="text-xs sm:text-sm font-medium text-gray-300 cursor-pointer hover:text-white transition-colors truncate player-name"
-                onclick="editPlayerName(${i})" title="點擊修改名稱">
-                ${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)} ✏️
-              </span>
+            <div class="text-lg leading-none mb-1">${icon}</div>
+            <div class="text-xs sm:text-sm font-medium text-gray-300 cursor-pointer hover:text-white transition-colors truncate player-name mb-1"
+              onclick="editPlayerName(${i})" title="點擊修改名稱">
+              ${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)} ✏️
             </div>
             <div class="font-black player-profit fluid-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
               ${profit > 0 ? '+' : ''}${profit}
