@@ -44,8 +44,8 @@
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
     @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 5px currentColor; } 50% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; } }
     @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-    @keyframes toastIn { from { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
-    @keyframes toastOut { from { opacity: 1; transform: translate(-50%, -50%) scale(1); } to { opacity: 0; transform: translate(-50%, -50%) scale(0.8); } }
+    @keyframes toastIn { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }
+    @keyframes toastOut { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(0.8); } }
 
     .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
     .animate-slideUp { animation: slideUp 0.3s ease-out; }
@@ -136,6 +136,15 @@
     .fluid-profit {
       font-size: clamp(1.25rem, 4vw, 2rem);
     }
+
+    /* 底部輸入區：防止列被壓縮 */
+    .input-col {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+    .input-col input[type="number"] {
+      font-size: max(16px, 1rem); /* 防止 iOS 自動縮放 */
+    }
   </style>
 </head>
 <body class="text-white font-sans flex flex-col overflow-hidden grid-bg"
@@ -155,21 +164,21 @@
         <span class="text-xl">🃏</span>
         <h1 class="text-base font-bold neon-text-cyan">出來聊天</h1>
       </div>
-      <div class="flex items-center gap-1.5">
-        <span class="text-xs text-gray-400">小局 <span id="gameRound" class="font-bold neon-text-pink">1</span></span>
+      <div class="flex items-center gap-1.5 flex-wrap justify-end">
+        <span class="text-xs text-gray-400 whitespace-nowrap">小局 <span id="gameRound" class="font-bold neon-text-pink">1</span></span>
         <button onclick="handleUndo()" id="undoBtn"
-          class="ml-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          class="ml-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed whitespace-nowrap"
           style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.15);color:#00f0ff;"
           disabled>
           ↩ 撤銷
         </button>
         <button onclick="handleResetRound()"
-          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
           style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);color:#a855f7;">
           重置小局
         </button>
         <button onclick="handleResetGame()"
-          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap"
           style="background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.15);color:#ff3366;">
           重置遊戲
         </button>
@@ -236,7 +245,7 @@
   </div>
 
   <!-- 结算弹窗 -->
-  <div id="settlementModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+  <div id="settlementModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto" style="display:none">
     <div class="absolute inset-0" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);" onclick="closeSettlementModal()"></div>
     <div class="relative rounded-2xl p-5 sm:p-6 w-full max-w-lg animate-fadeIn modal-body"
       style="background:rgba(15,15,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(0,240,255,0.2);box-shadow:0 0 40px rgba(0,240,255,0.1);">
@@ -257,7 +266,7 @@
   </div>
 
   <!-- 彩蛋弹窗 -->
-  <div id="easterToast" class="fixed z-50 pointer-events-none" style="top:50%;left:50%;transform:translate(-50%,-50%);display:none;">
+  <div id="easterToast" class="fixed z-50 pointer-events-none" style="inset:0;display:none;margin:auto;width:fit-content;height:fit-content;">
     <div class="px-6 py-4 rounded-2xl text-center max-w-xs"
       style="background:rgba(10,10,26,0.95);backdrop-filter:blur(20px);border:2px solid rgba(255,45,149,0.5);box-shadow:0 0 30px rgba(255,45,149,0.3),0 0 60px rgba(168,85,247,0.15);">
       <div id="easterEmoji" class="text-3xl mb-2">🐶</div>
@@ -463,8 +472,8 @@
       container.innerHTML = state.players.map((name, i) => {
         const neon = NEON_CSS[NEON_COLORS[i]];
         return `
-        <div class="flex-1">
-          <label class="text-[10px] block text-center mb-1 truncate px-1.5 py-0.5 rounded-lg font-bold" style="color:#fff;text-shadow:0 0 10px ${neon.border};background:${neon.bg.replace('0.06', '0.15')};border:1px solid ${neon.border.replace('0.2', '0.5')};box-shadow:0 0 12px ${neon.border.replace('0.2', '0.5')}, inset 0 0 8px ${neon.border.replace('0.2', '0.2')};">${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}</label>
+        <div class="input-col">
+          <label class="text-[10px] block text-center mb-1 truncate px-1 py-0.5 rounded-lg font-bold" style="color:#fff;text-shadow:0 0 10px ${neon.border};background:${neon.bg.replace('0.06', '0.15')};border:1px solid ${neon.border.replace('0.2', '0.5')};box-shadow:0 0 12px ${neon.border.replace('0.2', '0.5')}, inset 0 0 8px ${neon.border.replace('0.2', '0.2')};">${escapeHtml(name.length > 3 ? name.substring(0, 3) : name)}</label>
           <input type="number" min="1" max="100" step="1"
             placeholder="?"
             value="${cardInputs[i] !== null ? cardInputs[i] : ''}"
@@ -478,21 +487,29 @@
     }
 
     function updateButtons() {
-      const hasValues = cardInputs.filter(v => v !== null && v > 0);
-      const allValid = hasValues.length >= 1 && hasValues.every(v => v >= 1 && v <= 100);
+      const filled = cardInputs.filter(v => v !== null && v > 0);
+      const emptyCount = cardInputs.filter(v => v === null || v === 0).length;
+      const allInRange = filled.every(v => v >= 1 && v <= 100);
+      const canConfirm = filled.length === 3 && emptyCount === 1 && allInRange;
 
-      document.getElementById('confirmBtn').disabled = !allValid;
+      document.getElementById('confirmBtn').disabled = !canConfirm;
       document.getElementById('undoBtn').disabled = state.undoStack.length === 0;
 
       const hint = document.getElementById('inputHint');
-      if (hasValues.length === 0) {
-        hint.textContent = '請輸入至少1位玩家的牌數';
+      if (emptyCount === 4) {
+        hint.textContent = '請輸入3位玩家的牌數，留空者為赢家';
         hint.style.color = 'rgba(255,255,255,0.25)';
-      } else if (!allValid) {
+      } else if (emptyCount === 0) {
+        hint.textContent = '請留空1位玩家（赢家）';
+        hint.style.color = '#e8b931';
+      } else if (emptyCount > 1) {
+        hint.textContent = '只能留空1位玩家（赢家）';
+        hint.style.color = '#e8b931';
+      } else if (!allInRange) {
         hint.textContent = '牌數範圍：1-100';
         hint.style.color = '#e8b931';
       } else {
-        hint.textContent = '✓ 可以確認（未輸入者為赢家）';
+        hint.textContent = '✓ 可以確認';
         hint.style.color = '#00ff88';
       }
     }
@@ -654,8 +671,8 @@
         if (cardInputs[i] === null || cardInputs[i] === 0) { winners.push(i); }
         else { losers.push({ idx: i, cards: cardInputs[i] }); }
       }
-      if (winners.length === 0) {
-        alert('請至少保留一位玩家不輸入數值（該玩家為赢家）');
+      if (winners.length !== 1) {
+        alert('請恰好留空1位玩家（赢家），其他3位必須輸入牌數');
         return;
       }
       const turnProfits = calcTurnProfits(winners[0], losers);
