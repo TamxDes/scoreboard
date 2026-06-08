@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>出來聊天</title>
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
   <meta http-equiv="Pragma" content="no-cache">
@@ -17,9 +17,14 @@
             accent: '#e8b931',
             danger: '#dc2626',
             success: '#16a34a',
+            neon: {
+              cyan: '#00f0ff',
+              pink: '#ff2d95',
+              purple: '#a855f7',
+            },
           },
           fontFamily: {
-            sans: ['"Noto Sans TC"', 'system-ui', 'sans-serif'],
+            sans: ['"Noto Sans TC"', 'system-ui', '-apple-system', 'sans-serif'],
           },
         },
       },
@@ -27,107 +32,172 @@
   </script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
   <style>
-    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar { width: 3px; }
     ::-webkit-scrollbar-track { background: transparent; }
-    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 2px; }
+    ::-webkit-scrollbar-thumb { background: rgba(0, 240, 255, 0.2); border-radius: 2px; }
     input[type=number]::-webkit-inner-spin-button,
     input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
     input[type=number] { -moz-appearance: textfield; }
+
     @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
     @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 5px currentColor; } 50% { box-shadow: 0 0 20px currentColor, 0 0 40px currentColor; } }
+    @keyframes gradientShift { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+
     .animate-fadeIn { animation: fadeIn 0.3s ease-out; }
     .animate-slideUp { animation: slideUp 0.3s ease-out; }
-    @keyframes pulse-danger { 0%, 100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); } 50% { box-shadow: 0 0 12px 4px rgba(220, 38, 38, 0.3); } }
-    .danger-glow { animation: pulse-danger 2s infinite; }
+
+    /* 霓虹发光效果 */
+    .neon-glow-cyan { box-shadow: 0 0 10px rgba(0, 240, 255, 0.3), inset 0 0 10px rgba(0, 240, 255, 0.05); border-color: rgba(0, 240, 255, 0.3); }
+    .neon-glow-pink { box-shadow: 0 0 10px rgba(255, 45, 149, 0.3), inset 0 0 10px rgba(255, 45, 149, 0.05); border-color: rgba(255, 45, 149, 0.3); }
+    .neon-glow-purple { box-shadow: 0 0 10px rgba(168, 85, 247, 0.3), inset 0 0 10px rgba(168, 85, 247, 0.05); border-color: rgba(168, 85, 247, 0.3); }
+    .neon-text-cyan { color: #00f0ff; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5); }
+    .neon-text-pink { color: #ff2d95; text-shadow: 0 0 10px rgba(255, 45, 149, 0.5); }
+    .neon-text-green { color: #00ff88; text-shadow: 0 0 10px rgba(0, 255, 136, 0.5); }
+    .neon-text-red { color: #ff3366; text-shadow: 0 0 10px rgba(255, 51, 102, 0.5); }
+
+    /* 网格背景 */
+    .grid-bg::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.015) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.015) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 安全区域 */
+    .safe-top { padding-top: env(safe-area-inset-top); }
+    .safe-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+    /* 弹窗 */
     @media (max-width: 480px) {
-      .modal-body { max-height: 85vh; overflow-y: auto; }
+      .modal-body { max-height: 85vh; max-height: 85dvh; overflow-y: auto; }
+    }
+
+    /* 超小屏 */
+    @media (max-width: 360px) {
+      .player-profit { font-size: 1.5rem !important; }
+      .player-name { font-size: 0.625rem !important; }
     }
   </style>
 </head>
-<body class="bg-gray-900 text-white h-screen font-sans flex flex-col overflow-hidden">
+<body class="text-white font-sans flex flex-col overflow-hidden grid-bg"
+  style="height: 100vh; height: 100dvh; background: #0a0a1a;">
 
-  <!-- 頂部標題欄 -->
-  <header class="sticky top-0 z-30 bg-gray-800/95 backdrop-blur border-b border-gray-700 shadow-lg">
-    <div class="max-w-2xl mx-auto px-4 py-2 flex items-center justify-between">
+  <!-- 背景霓虹光斑 -->
+  <div class="fixed inset-0 pointer-events-none z-0">
+    <div class="absolute rounded-full" style="width:300px;height:300px;background:radial-gradient(circle,rgba(0,240,255,0.12),transparent 70%);top:-80px;right:-60px;filter:blur(40px);"></div>
+    <div class="absolute rounded-full" style="width:250px;height:250px;background:radial-gradient(circle,rgba(255,45,149,0.1),transparent 70%);bottom:20%;left:-60px;filter:blur(40px);"></div>
+    <div class="absolute rounded-full" style="width:200px;height:200px;background:radial-gradient(circle,rgba(168,85,247,0.08),transparent 70%);top:50%;right:-40px;filter:blur(40px);"></div>
+  </div>
+
+  <!-- 顶栏 -->
+  <header class="safe-top sticky top-0 z-30" style="background:rgba(10,10,26,0.85);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(0,240,255,0.1);">
+    <div class="max-w-2xl mx-auto px-3 sm:px-4 py-2.5 flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <span class="text-2xl">🃏</span>
-        <h1 class="text-lg font-bold text-accent">出來聊天</h1>
+        <span class="text-xl">🃏</span>
+        <h1 class="text-base font-bold neon-text-cyan">出來聊天</h1>
       </div>
-      <div class="flex items-center gap-2 text-sm">
-        <span class="text-gray-400">小局 <span id="gameRound" class="text-white font-bold">1</span></span>
-        <button onclick="handleUndo()"
-          id="undoBtn"
-          class="ml-2 px-2.5 py-1.5 bg-gray-700 hover:bg-gray-600 text-gray-300 rounded-lg text-xs font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+      <div class="flex items-center gap-1.5">
+        <span class="text-xs text-gray-400">小局 <span id="gameRound" class="font-bold neon-text-pink">1</span></span>
+        <button onclick="handleUndo()" id="undoBtn"
+          class="ml-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style="background:rgba(0,240,255,0.08);border:1px solid rgba(0,240,255,0.15);color:#00f0ff;"
           disabled>
           ↩ 撤銷
         </button>
         <button onclick="handleResetRound()"
-          class="px-2.5 py-1.5 bg-gray-700 hover:bg-orange-600 text-gray-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
+          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+          style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.15);color:#a855f7;">
           重置小局
         </button>
         <button onclick="handleResetGame()"
-          class="px-2.5 py-1.5 bg-gray-700 hover:bg-red-600 text-gray-300 hover:text-white rounded-lg text-xs font-medium transition-colors">
+          class="px-2 py-1.5 rounded-lg text-xs font-medium transition-all"
+          style="background:rgba(255,51,102,0.08);border:1px solid rgba(255,51,102,0.15);color:#ff3366;">
           重置遊戲
         </button>
       </div>
     </div>
   </header>
 
-  <!-- 玩家盈利顯示區 -->
-  <div class="bg-gray-800 border-b border-gray-700">
-    <div class="max-w-2xl mx-auto px-4 py-3">
-      <div class="grid grid-cols-4 gap-3" id="playersPanel"></div>
-    </div>
-  </div>
+  <!-- 主内容区（信息流：玩家 + 历史一起滚动） -->
+  <div class="flex-1 overflow-hidden relative z-10">
+    <div class="h-full overflow-y-auto px-3 sm:px-4 py-3" id="mainPanel">
 
-  <!-- 主要內容區：歷史記錄可滾動 -->
-  <div class="flex-1 overflow-hidden">
-    <div class="h-full overflow-y-auto p-4" id="historyPanel">
-      <table class="w-full text-sm" id="historyTable">
-        <thead class="sticky top-0 bg-gray-900 z-10">
-          <tr id="historyHeader" class="text-gray-400 text-xs"></tr>
-        </thead>
-        <tbody id="historyBody" class="text-gray-300"></tbody>
-      </table>
-      <div id="historyEmpty" class="text-center text-gray-600 text-sm py-8">尚無記錄</div>
-    </div>
-  </div>
+      <!-- 玩家卡片 4×1 -->
+      <div class="grid grid-cols-4 gap-2 sm:gap-3 mb-4" id="playersPanel"></div>
 
-  <!-- 輸入操作區：固定底部 -->
-  <div class="bg-gray-800 border-t border-gray-700 shadow-lg">
-    <div class="max-w-2xl mx-auto px-4 py-3">
-      <!-- 牌數輸入 -->
-      <div class="flex items-center gap-2 mb-3">
-        <label class="text-xs text-gray-400 shrink-0 w-10">牌數</label>
-        <div id="cardsInput" class="flex gap-1.5 flex-1"></div>
+      <!-- 历史记录标题 -->
+      <div id="historySection" class="mb-2">
+        <div class="flex items-center gap-2 mb-2">
+          <div class="h-px flex-1" style="background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);"></div>
+          <span class="text-xs font-bold tracking-widest" style="color:rgba(0,240,255,0.5);">歷史記錄</span>
+          <div class="h-px flex-1" style="background:linear-gradient(90deg,transparent,rgba(0,240,255,0.3),transparent);"></div>
+        </div>
       </div>
 
-      <!-- 確認按鈕和提示 -->
+      <!-- 历史记录表格 -->
+      <div id="historyWrap" class="rounded-xl overflow-hidden mb-4" style="background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.05);">
+        <table class="w-full text-sm" id="historyTable">
+          <thead>
+            <tr id="historyHeader" class="text-xs" style="color:rgba(0,240,255,0.6);"></tr>
+          </thead>
+          <tbody id="historyBody" class="text-gray-300"></tbody>
+        </table>
+      </div>
+
+      <div id="historyEmpty" class="text-center py-10">
+        <div class="text-5xl mb-3">🎴</div>
+        <div class="text-sm" style="color:rgba(0,240,255,0.4);">尚無記錄</div>
+        <div class="text-xs mt-1" style="color:rgba(255,255,255,0.15);">開始遊戲後將顯示在這裡</div>
+      </div>
+
+      <!-- 底部留白，避免被输入区遮挡 -->
+      <div class="h-4"></div>
+    </div>
+  </div>
+
+  <!-- 底部输入区 -->
+  <div class="safe-bottom sticky bottom-0 z-20" style="background:rgba(10,10,26,0.9);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid rgba(255,45,149,0.15);">
+    <div class="max-w-2xl mx-auto px-3 sm:px-4 py-3">
+      <!-- 牌数输入 -->
+      <div class="flex items-center gap-2 mb-3">
+        <label class="text-xs shrink-0 w-8 sm:w-10" style="color:rgba(0,240,255,0.5);">牌數</label>
+        <div id="cardsInput" class="flex gap-2 flex-1"></div>
+      </div>
+
+      <!-- 确认按钮和提示 -->
       <div class="flex items-center gap-3">
         <button id="confirmBtn" onclick="handleConfirmTurn()"
-          class="px-6 py-2 bg-accent hover:bg-yellow-500 text-gray-900 font-bold rounded-xl text-sm transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+          class="flex-shrink-0 px-6 py-2.5 rounded-xl text-sm font-bold transition-all disabled:opacity-30 disabled:cursor-not-allowed"
+          style="background:linear-gradient(135deg,#ff2d95,#a855f7);color:#fff;box-shadow:0 0 15px rgba(255,45,149,0.3);">
           確認本輪
         </button>
-        <span id="inputHint" class="text-xs text-gray-500"></span>
+        <span id="inputHint" class="text-xs truncate"></span>
       </div>
     </div>
   </div>
 
-  <!-- 結算彈窗 -->
-  <div id="settlementModal" class="fixed inset-0 z-50 flex items-center justify-center" style="display:none">
-    <div class="absolute inset-0 bg-black/70 backdrop-blur-sm" onclick="closeSettlementModal()"></div>
-    <div class="relative bg-gray-800 rounded-2xl p-6 w-full max-w-lg shadow-2xl border border-gray-700 animate-fadeIn modal-body">
-      <h2 class="text-xl font-bold text-accent mb-1">🎉 小局結束！</h2>
+  <!-- 结算弹窗 -->
+  <div id="settlementModal" class="fixed inset-0 z-50 flex items-center justify-center p-4" style="display:none">
+    <div class="absolute inset-0" style="background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);" onclick="closeSettlementModal()"></div>
+    <div class="relative rounded-2xl p-5 sm:p-6 w-full max-w-lg animate-fadeIn modal-body"
+      style="background:rgba(15,15,35,0.95);backdrop-filter:blur(20px);border:1px solid rgba(0,240,255,0.2);box-shadow:0 0 40px rgba(0,240,255,0.1);">
+      <h2 class="text-xl font-bold mb-1 neon-text-cyan">🎉 小局結束！</h2>
       <p class="text-sm text-gray-400 mb-4" id="settlementTrigger"></p>
 
-      <!-- 結算匯總 -->
       <div class="mb-4">
-        <h3 class="text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider">結算匯總</h3>
+        <h3 class="text-xs font-bold mb-2 uppercase tracking-wider" style="color:rgba(255,45,149,0.6);">結算匯總</h3>
         <div class="grid grid-cols-2 gap-2" id="settlementSummary"></div>
       </div>
 
       <button onclick="startNewGameRound()"
-        class="w-full py-3 bg-accent hover:bg-yellow-500 text-gray-900 font-bold rounded-xl transition-colors">
+        class="w-full py-3 rounded-xl font-bold transition-all"
+        style="background:linear-gradient(135deg,#00f0ff,#a855f7);color:#fff;box-shadow:0 0 20px rgba(0,240,255,0.3);">
         繼續新小局
       </button>
     </div>
@@ -140,17 +210,22 @@
     // ============================================================
 
     const STORAGE_KEY = 'bigTwoScoreboard';
-
-    // ---------- 狀態 ----------
+    const NEON_COLORS = ['cyan', 'pink', 'purple', 'green'];
+    const NEON_CSS = {
+      cyan:   { bg: 'rgba(0,240,255,0.06)',   border: 'rgba(0,240,255,0.2)',   glow: 'neon-glow-cyan',   text: 'neon-text-cyan' },
+      pink:   { bg: 'rgba(255,45,149,0.06)',   border: 'rgba(255,45,149,0.2)',   glow: 'neon-glow-pink',   text: 'neon-text-pink' },
+      purple: { bg: 'rgba(168,85,247,0.06)',   border: 'rgba(168,85,247,0.2)',   glow: 'neon-glow-purple', text: 'neon-text-pink' },
+      green:  { bg: 'rgba(0,255,136,0.06)',    border: 'rgba(0,255,136,0.2)',    glow: 'neon-glow-cyan',   text: 'neon-text-green' },
+    };
 
     let state = {
       players: ['玩家1', '玩家2', '玩家3', '玩家4'],
-      totalScores: [0, 0, 0, 0],      // 總積分（結算後的累計）
-      profits: [0, 0, 0, 0],          // 總盈利
+      totalScores: [0, 0, 0, 0],
+      profits: [0, 0, 0, 0],
       gameRound: 1,
-      history: [],                      // [{round, turnInRound, winner, losers, roundScores, settled}]
-      roundScores: [0, 0, 0, 0],       // 當前小局積分
-      roundProfits: [0, 0, 0, 0],      // 當前小局盈利
+      history: [],
+      roundScores: [0, 0, 0, 0],
+      roundProfits: [0, 0, 0, 0],
       undoStack: [],
     };
 
@@ -158,11 +233,7 @@
     let turnInRound = 1;
 
     // ---------- 初始化 ----------
-
-    function init() {
-      loadState();
-      renderAll();
-    }
+    function init() { loadState(); renderAll(); }
 
     function loadState() {
       try {
@@ -172,13 +243,10 @@
           state = { ...state, ...parsed };
           if (!state.profits) state.profits = [0, 0, 0, 0];
           if (!state.roundProfits) state.roundProfits = [0, 0, 0, 0];
-          // 恢復當前小局輪次
           const lastRecord = state.history[state.history.length - 1];
           if (lastRecord && lastRecord.round === state.gameRound) {
             turnInRound = lastRecord.turnInRound + 1;
-          } else {
-            turnInRound = 1;
-          }
+          } else { turnInRound = 1; }
         }
       } catch (e) { console.warn('載入失敗:', e); }
     }
@@ -189,31 +257,19 @@
     }
 
     // ---------- 盈利計算 ----------
-
-    /**
-     * 計算單輪盈利
-     * 公式：其他玩家牌數總和 - 3×自己牌數
-     * 赢家牌數為0，輸家牌數為剩餘牌數
-     */
     function calcTurnProfits(winnerIdx, losers) {
-      // 構建本輪每人牌數
       const cards = [0, 0, 0, 0];
       losers.forEach(l => { cards[l.idx] = l.cards; });
-      // winner 的 cards 已經是 0
-
       const profits = [0, 0, 0, 0];
       for (let i = 0; i < 4; i++) {
         let othersTotal = 0;
-        for (let j = 0; j < 4; j++) {
-          if (j !== i) othersTotal += cards[j];
-        }
+        for (let j = 0; j < 4; j++) { if (j !== i) othersTotal += cards[j]; }
         profits[i] = othersTotal - 3 * cards[i];
       }
       return profits;
     }
 
     // ---------- 渲染 ----------
-
     function renderAll() {
       renderHeader();
       renderPlayersPanel();
@@ -227,101 +283,105 @@
       document.getElementById('gameRound').textContent = state.gameRound;
     }
 
-    /** 玩家盈利顯示區 */
     function renderPlayersPanel() {
       const container = document.getElementById('playersPanel');
+      // 不同颜色的人形图标
+      const personIcons = ['🧑‍🦱', '👩', '👨', '🧑'];
+
       container.innerHTML = state.players.map((name, i) => {
         const profit = state.profits[i] + state.roundProfits[i];
         const isPositive = profit > 0;
         const isNegative = profit < 0;
+        const neon = NEON_CSS[NEON_COLORS[i]];
+
         return `
-          <div class="bg-gray-800 rounded-xl p-3 border border-gray-700 text-center">
-            <div class="text-xs font-medium text-gray-400 cursor-pointer hover:text-accent transition-colors truncate mb-1"
+          <div class="rounded-xl p-2.5 sm:p-3 text-center transition-all ${neon.glow}"
+            style="background:${neon.bg};border:1px solid ${neon.border};">
+            <div class="text-lg sm:text-xl mb-0.5">${personIcons[i]}</div>
+            <div class="text-[10px] sm:text-xs font-medium text-gray-400 cursor-pointer hover:text-white transition-colors truncate player-name"
               onclick="editPlayerName(${i})" title="點擊修改名稱">
               ${escapeHtml(name)} ✏️
             </div>
-            <div class="text-2xl font-black ${isPositive ? 'text-green-400' : isNegative ? 'text-red-400' : 'text-white'}">
+            <div class="text-xl sm:text-2xl font-black mt-1 player-profit ${isPositive ? 'neon-text-green' : isNegative ? 'neon-text-red' : 'text-white'}">
               ${profit > 0 ? '+' : ''}${profit}
             </div>
           </div>`;
       }).join('');
     }
 
-    /** 歷史記錄表格 */
     function renderHistory() {
       const header = document.getElementById('historyHeader');
       const body = document.getElementById('historyBody');
       const empty = document.getElementById('historyEmpty');
+      const wrap = document.getElementById('historyWrap');
+      const section = document.getElementById('historySection');
 
       if (state.history.length === 0) {
         header.innerHTML = '';
         body.innerHTML = '';
         empty.style.display = 'block';
+        wrap.style.display = 'none';
+        section.style.display = 'none';
         return;
       }
 
       empty.style.display = 'none';
+      wrap.style.display = 'block';
+      section.style.display = 'block';
 
-      // 表頭（無盈利列）
-      header.innerHTML = `<th class="py-2 px-3 text-left font-medium">R</th>` +
-        state.players.map(n => `<th class="py-2 px-3 text-center font-medium">${escapeHtml(n.length > 4 ? n.substring(0, 4) : n)}</th>`).join('');
+      header.innerHTML = `<th class="py-2 px-2 sm:px-3 text-left font-medium">R</th>` +
+        state.players.map(n => `<th class="py-2 px-2 sm:px-3 text-center font-medium">${escapeHtml(n.length > 4 ? n.substring(0, 4) : n)}</th>`).join('');
 
-      // 按小局分組渲染
       let html = '';
       let currentRound = 0;
 
-      state.history.forEach((record, idx) => {
-        // 小局分隔線
+      state.history.forEach((record) => {
         if (record.round !== currentRound) {
           if (currentRound > 0) {
-            // 上一小局的合計行
             const roundRecords = state.history.filter(r => r.round === currentRound);
             const lastRecord = roundRecords[roundRecords.length - 1];
             if (lastRecord && lastRecord.roundScores) {
-              html += `<tr class="border-t-2 border-gray-600 font-bold">
-                <td class="py-2 px-3 text-gray-400">合計</td>`;
+              html += `<tr style="border-top:2px solid rgba(0,240,255,0.15);">
+                <td class="py-2 px-2 sm:px-3 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</td>`;
               for (let pi = 0; pi < 4; pi++) {
                 const isDanger = lastRecord.roundScores[pi] >= 100;
-                html += `<td class="py-2 px-3 text-center ${isDanger ? 'text-red-400' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
+                html += `<td class="py-2 px-2 sm:px-3 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
               }
               html += '</tr>';
             }
-
-            // 分隔線
-            html += `<tr><td colspan="5" class="py-3">
+            html += `<tr><td colspan="5" class="py-2">
               <div class="flex items-center gap-2">
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-accent to-transparent"></div>
-                <span class="text-xs text-accent font-bold px-2">小局 ${record.round}</span>
-                <div class="flex-1 h-px bg-gradient-to-r from-transparent via-accent to-transparent"></div>
+                <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(255,45,149,0.3),transparent);"></div>
+                <span class="text-xs font-bold px-2 neon-text-pink">小局 ${record.round}</span>
+                <div class="flex-1 h-px" style="background:linear-gradient(90deg,transparent,rgba(255,45,149,0.3),transparent);"></div>
               </div>
             </td></tr>`;
           }
           currentRound = record.round;
         }
 
-        // 每輪記錄（無盈利列）
-        html += `<tr class="border-t border-gray-800/50 hover:bg-gray-800/30">
-          <td class="py-2 px-3 text-gray-500 font-medium text-xs">${record.turnInRound}</td>`;
+        html += `<tr style="border-top:1px solid rgba(255,255,255,0.04);" class="hover:bg-white/[0.02] transition-colors">
+          <td class="py-1.5 sm:py-2 px-2 sm:px-3 text-xs font-medium" style="color:rgba(0,240,255,0.4);">${record.turnInRound}</td>`;
         for (let pi = 0; pi < 4; pi++) {
           if (pi === record.winner) {
-            html += '<td class="py-2 px-3 text-center text-green-400 font-medium">0 ✓</td>';
+            html += '<td class="py-1.5 sm:py-2 px-2 sm:px-3 text-center font-medium neon-text-green">0 ✓</td>';
           } else {
             const loserInfo = record.losers.find(l => l.idx === pi);
-            html += `<td class="py-2 px-3 text-center text-gray-300">${loserInfo ? loserInfo.cards : '-'}</td>`;
+            html += `<td class="py-1.5 sm:py-2 px-2 sm:px-3 text-center text-gray-300">${loserInfo ? loserInfo.cards : '-'}</td>`;
           }
         }
         html += '</tr>';
       });
 
-      // 最後一個小局的合計行
+      // 最后一个小局合计
       if (currentRound > 0) {
         const lastRecord = state.history[state.history.length - 1];
         if (lastRecord && lastRecord.roundScores) {
-          html += `<tr class="border-t-2 border-gray-600 font-bold">
-            <td class="py-2 px-3 text-gray-400">合計</td>`;
+          html += `<tr style="border-top:2px solid rgba(0,240,255,0.15);">
+            <td class="py-2 px-2 sm:px-3 text-xs font-bold" style="color:rgba(0,240,255,0.5);">合計</td>`;
           for (let pi = 0; pi < 4; pi++) {
             const isDanger = lastRecord.roundScores[pi] >= 100;
-            html += `<td class="py-2 px-3 text-center ${isDanger ? 'text-red-400' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
+            html += `<td class="py-2 px-2 sm:px-3 text-center font-bold ${isDanger ? 'neon-text-red' : 'text-white'}">${lastRecord.roundScores[pi]}</td>`;
           }
           html += '</tr>';
         }
@@ -329,28 +389,28 @@
 
       body.innerHTML = html;
 
-      // 滾動到底部
-      const panel = document.getElementById('historyPanel');
+      // 滚动到底部
+      const panel = document.getElementById('mainPanel');
       panel.scrollTop = panel.scrollHeight;
     }
 
-    /** 牌數輸入 */
     function renderCardsInput() {
       const container = document.getElementById('cardsInput');
-      container.innerHTML = state.players.map((name, i) => `
+      container.innerHTML = state.players.map((name, i) => {
+        const neon = NEON_CSS[NEON_COLORS[i]];
+        return `
         <div class="flex-1">
-          <label class="text-[10px] text-gray-500 block text-center mb-0.5">${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}</label>
+          <label class="text-[10px] block text-center mb-0.5 truncate px-0.5" style="color:rgba(0,240,255,0.4);">${escapeHtml(name.length > 4 ? name.substring(0, 4) : name)}</label>
           <input type="number" min="1" max="100" step="1"
             placeholder="牌數"
             value="${cardInputs[i] !== null ? cardInputs[i] : ''}"
             oninput="onCardInput(${i}, this.value)"
-            class="w-full px-1 py-1.5 rounded-lg bg-gray-700 border border-gray-600 text-white text-center text-sm
-              placeholder-gray-600 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-colors">
-        </div>
-      `).join('');
+            class="w-full px-1 py-2 rounded-lg text-white text-center text-sm placeholder-gray-700 focus:outline-none transition-all"
+            style="background:rgba(255,255,255,0.04);border:1px solid ${neon.border};focus:border:${neon.border};">
+        </div>`;
+      }).join('');
     }
 
-    /** 按鈕狀態 */
     function updateButtons() {
       const hasValues = cardInputs.filter(v => v !== null && v > 0);
       const allValid = hasValues.length >= 1 && hasValues.every(v => v >= 1 && v <= 100);
@@ -358,26 +418,23 @@
       document.getElementById('confirmBtn').disabled = !allValid;
       document.getElementById('undoBtn').disabled = state.undoStack.length === 0;
 
-      // 提示信息
       const hint = document.getElementById('inputHint');
       if (hasValues.length === 0) {
         hint.textContent = '請輸入至少1位玩家的牌數';
-        hint.className = 'text-xs text-gray-500';
+        hint.style.color = 'rgba(255,255,255,0.25)';
       } else if (!allValid) {
         hint.textContent = '牌數範圍：1-100';
-        hint.className = 'text-xs text-yellow-500';
+        hint.style.color = '#e8b931';
       } else {
         hint.textContent = '✓ 可以確認（未輸入者為赢家）';
-        hint.className = 'text-xs text-green-500';
+        hint.style.color = '#00ff88';
       }
     }
 
     // ---------- 操作 ----------
-
     function onCardInput(idx, value) {
-      if (value === '') {
-        cardInputs[idx] = null;
-      } else {
+      if (value === '') { cardInputs[idx] = null; }
+      else {
         let num = parseInt(value, 10);
         if (isNaN(num) || num < 1) num = 1;
         if (num > 100) num = 100;
@@ -387,87 +444,51 @@
     }
 
     function handleConfirmTurn() {
-      // 自動判斷赢家：沒有輸入數值的玩家
       const winners = [];
       const losers = [];
       for (let i = 0; i < 4; i++) {
-        if (cardInputs[i] === null || cardInputs[i] === 0) {
-          winners.push(i);
-        } else {
-          losers.push({ idx: i, cards: cardInputs[i] });
-        }
+        if (cardInputs[i] === null || cardInputs[i] === 0) { winners.push(i); }
+        else { losers.push({ idx: i, cards: cardInputs[i] }); }
       }
-
-      // 如果所有玩家都輸入了數值，則無法確認
       if (winners.length === 0) {
         alert('請至少保留一位玩家不輸入數值（該玩家為赢家）');
         return;
       }
-
-      // 計算本輪盈利（使用第一個赢家）
       const turnProfits = calcTurnProfits(winners[0], losers);
-
-      // 撤銷快照
       state.undoStack.push({
-        totalScores: [...state.totalScores],
-        profits: [...state.profits],
-        roundScores: [...state.roundScores],
-        roundProfits: [...state.roundProfits],
+        totalScores: [...state.totalScores], profits: [...state.profits],
+        roundScores: [...state.roundScores], roundProfits: [...state.roundProfits],
         history: JSON.parse(JSON.stringify(state.history)),
-        gameRound: state.gameRound,
-        turnInRound: turnInRound,
+        gameRound: state.gameRound, turnInRound: turnInRound,
       });
-
-      // 更新積分和盈利
       losers.forEach(l => { state.roundScores[l.idx] += l.cards; });
       state.roundProfits = state.roundProfits.map((p, i) => p + turnProfits[i]);
-
-      // 記錄歷史
       state.history.push({
-        round: state.gameRound,
-        turnInRound: turnInRound,
-        winner: winners[0],
-        losers: losers,
-        roundScores: [...state.roundScores],
-        turnProfits: turnProfits,
-        settled: false,
+        round: state.gameRound, turnInRound: turnInRound,
+        winner: winners[0], losers: losers,
+        roundScores: [...state.roundScores], turnProfits: turnProfits, settled: false,
       });
-
       turnInRound++;
-
-      // 檢查是否觸發結算
       const triggered = state.roundScores.map((s, i) => s >= 100 ? i : -1).filter(i => i !== -1);
-      if (triggered.length > 0) {
-        handleGameRoundEnd(triggered);
-      } else {
-        cardInputs = [null, null, null, null];
-        renderAll();
-      }
+      if (triggered.length > 0) { handleGameRoundEnd(triggered); }
+      else { cardInputs = [null, null, null, null]; renderAll(); }
     }
 
-    /** 小局結束 */
     function handleGameRoundEnd(triggerIndices) {
       const settledScores = state.roundScores.map(s => Math.floor(s / 10) * 10);
       const carryOver = state.roundScores.map(s => s % 10);
       state.totalScores = state.totalScores.map((t, i) => t + settledScores[i]);
       state.profits = state.profits.map((p, i) => p + state.roundProfits[i]);
-
-      // 標記本局最後一條記錄為已結算
-      state.history.forEach(r => {
-        if (r.round === state.gameRound) r.settled = true;
-      });
-
+      state.history.forEach(r => { if (r.round === state.gameRound) r.settled = true; });
       showSettlementModal(triggerIndices, settledScores, carryOver);
     }
 
-    /** 結算彈窗 */
     function showSettlementModal(triggerIndices, settledScores, carryOver) {
       const triggerNames = triggerIndices.map(i => state.players[i]).join('、');
       const triggerScores = triggerIndices.map(i => state.roundScores[i]).join('、');
       document.getElementById('settlementTrigger').textContent =
         `${triggerNames} 達到 ${triggerScores} 分，小局結束！`;
 
-      // 結算匯總
       const summary = document.getElementById('settlementSummary');
       summary.innerHTML = state.players.map((name, i) => {
         const roundTotal = state.roundScores[i];
@@ -475,23 +496,24 @@
         const carry = carryOver[i];
         const roundProfit = state.roundProfits[i];
         const totalProfit = state.profits[i];
+        const neon = NEON_CSS[NEON_COLORS[i]];
         return `
-          <div class="bg-gray-700/50 rounded-xl px-3 py-2.5">
+          <div class="rounded-xl px-3 py-2.5" style="background:${neon.bg};border:1px solid ${neon.border};">
             <div class="flex items-center justify-between mb-1">
               <span class="font-medium text-white text-sm">${escapeHtml(name)}</span>
-              <span class="text-lg font-black ${totalProfit > 0 ? 'text-green-400' : totalProfit < 0 ? 'text-red-400' : 'text-white'}">
+              <span class="text-lg font-black ${totalProfit > 0 ? 'neon-text-green' : totalProfit < 0 ? 'neon-text-red' : 'text-white'}">
                 ${totalProfit > 0 ? '+' : ''}${totalProfit}
               </span>
             </div>
-            <div class="flex items-center gap-1 text-[11px] text-gray-400">
+            <div class="flex items-center gap-1 text-[11px] text-gray-400 flex-wrap">
               <span>本局 <b class="text-gray-200">${roundTotal}</b></span>
               <span class="text-gray-600">→</span>
-              <span>結算 <b class="text-accent">+${settled}</b></span>
+              <span>結算 <b style="color:#e8b931;">+${settled}</b></span>
               <span class="text-gray-600">+</span>
               <span>繼承 <b class="text-gray-200">${carry}</b></span>
             </div>
             <div class="text-[11px] mt-1">
-              <span class="${roundProfit > 0 ? 'text-green-400' : roundProfit < 0 ? 'text-red-400' : 'text-gray-400'}">
+              <span class="${roundProfit > 0 ? 'neon-text-green' : roundProfit < 0 ? 'neon-text-red' : 'text-gray-400'}">
                 本局盈利 ${roundProfit > 0 ? '+' : ''}${roundProfit} 張
               </span>
             </div>
@@ -501,9 +523,7 @@
       document.getElementById('settlementModal').style.display = 'flex';
     }
 
-    function closeSettlementModal() {
-      document.getElementById('settlementModal').style.display = 'none';
-    }
+    function closeSettlementModal() { document.getElementById('settlementModal').style.display = 'none'; }
 
     function startNewGameRound() {
       closeSettlementModal();
@@ -534,15 +554,11 @@
     function handleResetRound() {
       if (!confirm('確定要重置當前小局嗎？本局輪次記錄將清除，總積分保留。')) return;
       state.undoStack.push({
-        totalScores: [...state.totalScores],
-        profits: [...state.profits],
-        roundScores: [...state.roundScores],
-        roundProfits: [...state.roundProfits],
+        totalScores: [...state.totalScores], profits: [...state.profits],
+        roundScores: [...state.roundScores], roundProfits: [...state.roundProfits],
         history: JSON.parse(JSON.stringify(state.history)),
-        gameRound: state.gameRound,
-        turnInRound: turnInRound,
+        gameRound: state.gameRound, turnInRound: turnInRound,
       });
-      // 移除本局所有記錄
       state.history = state.history.filter(r => r.round !== state.gameRound);
       state.roundScores = [0, 0, 0, 0];
       state.roundProfits = [0, 0, 0, 0];
@@ -554,13 +570,10 @@
     function handleResetGame() {
       if (!confirm('確定要重置整個遊戲嗎？所有分數和歷史記錄將清空。')) return;
       state.undoStack.push({
-        totalScores: [...state.totalScores],
-        profits: [...state.profits],
-        roundScores: [...state.roundScores],
-        roundProfits: [...state.roundProfits],
+        totalScores: [...state.totalScores], profits: [...state.profits],
+        roundScores: [...state.roundScores], roundProfits: [...state.roundProfits],
         history: JSON.parse(JSON.stringify(state.history)),
-        gameRound: state.gameRound,
-        turnInRound: turnInRound,
+        gameRound: state.gameRound, turnInRound: turnInRound,
       });
       state.totalScores = [0, 0, 0, 0];
       state.profits = [0, 0, 0, 0];
@@ -574,7 +587,6 @@
     }
 
     // ---------- 工具 ----------
-
     function editPlayerName(idx) {
       const newName = prompt('輸入新名稱：', state.players[idx]);
       if (newName !== null && newName.trim() !== '') {

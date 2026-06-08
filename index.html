@@ -2,91 +2,203 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>鋤大Dee 計分器</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
+
     body {
-      font-family: "Noto Sans TC", system-ui, sans-serif;
-      background: linear-gradient(135deg, #1e3a5f 0%, #2d5a8e 100%);
+      font-family: "Noto Sans TC", system-ui, -apple-system, sans-serif;
+      background: #0a0a1a;
+      background-image:
+        radial-gradient(ellipse at 20% 50%, rgba(120, 0, 255, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 20%, rgba(0, 240, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(255, 0, 100, 0.1) 0%, transparent 50%);
       min-height: 100vh;
+      min-height: 100dvh;
       display: flex;
       justify-content: center;
       align-items: center;
       padding: 20px;
+      padding-top: max(20px, env(safe-area-inset-top));
+      padding-bottom: max(20px, env(safe-area-inset-bottom));
+      overflow: hidden;
     }
+
+    /* 网格背景 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+    }
+
     .container {
-      background: white;
-      border-radius: 20px;
-      padding: 40px;
-      max-width: 500px;
+      position: relative;
+      z-index: 1;
+      max-width: 420px;
       width: 100%;
-      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: fadeIn 0.8s ease-out;
     }
-    h1 {
-      color: #1e3a5f;
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .logo {
       text-align: center;
-      margin-bottom: 30px;
-      font-size: 28px;
+      margin-bottom: 36px;
     }
+    .logo-icon {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 12px;
+      filter: drop-shadow(0 0 20px rgba(0, 240, 255, 0.5));
+    }
+    .logo h1 {
+      font-size: 32px;
+      font-weight: 900;
+      background: linear-gradient(135deg, #00f0ff, #ff2d95);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      letter-spacing: 2px;
+    }
+    .logo .subtitle {
+      color: rgba(255, 255, 255, 0.4);
+      font-size: 13px;
+      margin-top: 6px;
+      letter-spacing: 4px;
+    }
+
     .card {
-      background: #f8fafc;
-      border: 2px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 20px;
-      margin-bottom: 20px;
-      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.04);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 240, 255, 0.15);
+      border-radius: 20px;
+      padding: 28px 24px;
+      margin-bottom: 16px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, #00f0ff, transparent);
+      opacity: 0.6;
     }
     .card:hover {
-      border-color: #e8b931;
+      border-color: rgba(0, 240, 255, 0.35);
+      box-shadow: 0 0 30px rgba(0, 240, 255, 0.1), inset 0 0 30px rgba(0, 240, 255, 0.03);
       transform: translateY(-2px);
-      box-shadow: 0 10px 30px rgba(0,0,0,0.1);
     }
-    .card h2 {
-      color: #1e3a5f;
-      margin-bottom: 10px;
-      font-size: 20px;
-    }
+
     .card p {
-      color: #64748b;
-      margin-bottom: 15px;
+      color: rgba(255, 255, 255, 0.55);
+      margin-bottom: 20px;
       font-size: 14px;
+      line-height: 1.7;
     }
+
+    .features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .feature {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: rgba(255, 255, 255, 0.5);
+      font-size: 12px;
+    }
+    .feature span:first-child {
+      font-size: 18px;
+    }
+
     .btn {
-      display: inline-block;
-      background: #e8b931;
-      color: #1e3a5f;
-      padding: 12px 24px;
-      border-radius: 8px;
+      display: block;
+      width: 100%;
+      padding: 16px 24px;
+      border-radius: 14px;
       text-decoration: none;
-      font-weight: 700;
-      font-size: 16px;
-      transition: background 0.3s;
+      font-weight: 800;
+      font-size: 17px;
+      text-align: center;
+      color: #fff;
+      background: linear-gradient(135deg, #ff2d95, #a855f7, #00f0ff);
+      background-size: 200% 200%;
+      animation: gradientShift 3s ease infinite;
+      box-shadow: 0 0 20px rgba(255, 45, 149, 0.3), 0 0 40px rgba(168, 85, 247, 0.15);
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
+    }
+    .btn::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, transparent, rgba(255,255,255,0.2), transparent);
+      transform: translateX(-100%);
+      transition: transform 0.5s ease;
+    }
+    .btn:hover::after {
+      transform: translateX(100%);
     }
     .btn:hover {
-      background: #d4a825;
+      box-shadow: 0 0 30px rgba(255, 45, 149, 0.5), 0 0 60px rgba(168, 85, 247, 0.2);
+      transform: translateY(-2px);
     }
+    .btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
     .footer {
       text-align: center;
-      margin-top: 30px;
-      color: #94a3b8;
-      font-size: 12px;
+      margin-top: 32px;
+      color: rgba(255, 255, 255, 0.15);
+      font-size: 11px;
     }
   </style>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
 </head>
 <body>
   <div class="container">
-    <h1>🃏 鋤大Dee 計分器</h1>
+    <div class="logo">
+      <span class="logo-icon">🃏</span>
+      <h1>鋤大Dee</h1>
+      <div class="subtitle">SCORE TRACKER</div>
+    </div>
 
     <div class="card">
-      <h2>🃏 鋤大Dee 計分器</h2>
-      <p>經典撲克牌遊戲「鋤大Dee」的計分工具，支持4人遊戲，實時計算分數和排名。</p>
+      <p>支持 4 人遊戲，實時計算盈利與排名，自動結算記分。</p>
+      <div class="features">
+        <div class="feature"><span>📊</span> 實時計分</div>
+        <div class="feature"><span>🔄</span> 撤銷重來</div>
+        <div class="feature"><span>💰</span> 盈利統計</div>
+        <div class="feature"><span>📱</span> 手機適配</div>
+      </div>
       <a href="big-two-scoreboard.html" class="btn">打開計分器</a>
     </div>
 
     <div class="footer">
-      由 Gitee Pages 提供支持
+      Vercel & GitHub Pages
     </div>
   </div>
 </body>
